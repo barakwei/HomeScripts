@@ -1,3 +1,3 @@
-[submodule "speedtestReporter"]
-	path = speedtestReporter
-	url = https://github.com/barakwei/speedtestReporter.git
+[submodule "speedtest"]
+	path = speedtest
+	url = https://github.com/barakwei/speedtest.git
