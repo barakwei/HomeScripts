@@ -1,6 +1,8 @@
 #!/bin/sh
 
-if curl http://localhost:9091/transmission/web/ --max-time 60 ; then
+curl -s -o /dev/null http://localhost:9091/transmission/web/ --max-time 60
+
+if [ $? -eq 0 ] ; then
   echo "$(date): Transmission OK"
 else
   SCRIPT_DIR="$(dirname "$0")"
