@@ -3,3 +3,6 @@ notify.cfg
 
 # thingspeak configuration file
 thingspeak.json
+
+# bot configuration file
+bot.json
