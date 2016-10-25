@@ -11,12 +11,12 @@ import os
 rootLogger = logging.getLogger('')
 rootLogger.setLevel(logging.INFO)
 
-def joinPathToScriptDirectory(path):
+def join_path_to_script_directory(path):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
 
 def configure_log():
     root = logging.getLogger()
-    log_file_name = joinPathToScriptDirectory('speedtest.log')    
+    log_file_name = join_path_to_script_directory('logs/speedtestReporter.log')
     h = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=1024*1024, backupCount=5)
     f = logging.Formatter('%(asctime)s %(name)s %(levelname)-8s %(message)s')
     h.setFormatter(f)
