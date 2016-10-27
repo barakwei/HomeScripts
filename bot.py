@@ -42,6 +42,9 @@ class Transmission:
             logging.error("Failed to connect to transmission")
             return ["Failed to connect to transmission"]
 
+        if not torrents:
+            return ["No torrents here"]
+
         format_torrents = [self._torrent_to_markdown(t) for t in torrents]
         return format_torrents
 
@@ -213,6 +216,7 @@ class TorrentCommandHandler:
         split_text = text.split()
         command = split_text[0][1:].lower()
         command_args = " ".join(split_text[1:])
+        logging.info("received torrent command " + command)
 
         if command == "add":
             self.command_handler = TorrentAddCommandHandler(self.bot, command_args)
@@ -260,18 +264,18 @@ class HomeBot(telepot.helper.ChatHandler):
         user = msg["from"]["username"]
         if user != "barakwei":
             # log it
-            print(user + " is not authorized!")
+            logging.error(user + " is not authorized!")
             self.sender.sendMessage(chat_id, "Not authorized!")
             return
         else:
-            print("Authorized!")
+            logging.info("User is authorized")
 
         if content_type != "text":
             # log it
             return
 
         message = msg['text'].strip()
-        print("Message arrived: " + message)
+        logging.error("Message arrived: " + message)
         if message == "/cancel":
             self.close()
 
