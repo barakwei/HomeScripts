@@ -75,6 +75,24 @@ class Transmission:
             logging.error("Failed to connect to transmission")
             return "Failed to connect to transmission"
 
+    def clean(self):
+        try:
+            c = self.connect()
+            torrents = c.get_torrents()
+            remove_ids = []
+            for torrent in torrents:
+                if torrent.leftUntilDone == 0:
+                    remove_ids.append(torrent.id)
+
+            if not remove_ids:
+                return "No torrents to remove"
+            else:
+                c.remove_torrent(remove_ids)
+                return "Removed {number} torrents".format(number=len(remove_ids))
+        except transmissionrpc.TransmissionError:
+            logging.error("Failed to connect to transmission")
+            return "Failed to connect to transmission"
+
 
 def join_path_to_script_directory(path):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
@@ -194,6 +212,13 @@ class TorrentStopCommandHandler(CommandHandler):
         self.bot.sender.sendMessage("Please provide a torrent ID or /cancel")
 
 
+class TorrentCleanCommandHandler:
+    def __init__(self, bot, text):
+        bot.sender.sendMessage(Transmission().clean(), parse_mode='Markdown')
+
+        self.text = text
+        bot.close()
+
 class TorrentCommandHandler:
     def __init__(self, bot, text):
         self.bot = bot
@@ -202,7 +227,7 @@ class TorrentCommandHandler:
         self.command_handler = None
 
     def send_command_help_message(self):
-        self.bot.sender.sendMessage("Torrent help - /list /add /start /stop")
+        self.bot.sender.sendMessage("Torrent help - /list /add /start /stop /clean")
 
     def handle_command(self, text):
         if self.command_handler:
@@ -226,6 +251,8 @@ class TorrentCommandHandler:
             self.command_handler = TorrentStartCommandHandler(self.bot, command_args)
         elif command == "stop":
             self.command_handler = TorrentStopCommandHandler(self.bot, command_args)
+        elif command == "clean":
+            self.command_handler = TorrentCleanCommandHandler(self.bot, command_args)
         else:
             self.send_command_help_message()
 
