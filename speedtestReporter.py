@@ -28,7 +28,7 @@ def main():
     global channel
 
     try:
-        config_file_path = joinPathToScriptDirectory('thingspeak.json')
+        config_file_path = join_path_to_script_directory('thingspeak.json')
         
         with open(config_file_path) as config_file:
             config = json.load(config_file)
