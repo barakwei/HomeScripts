@@ -288,11 +288,13 @@ class HomeBot(telepot.helper.ChatHandler):
 
     def on_chat_message(self, msg):
         content_type, chat_type, chat_id = telepot.glance(msg)
-        user = msg["from"]["username"]
+        user = msg["from"].get("username")
         if user != "barakwei":
-            # log it
-            logging.error(user + " is not authorized!")
-            self.sender.sendMessage(chat_id, "Not authorized!")
+            logging.error("User: {username} First: {first} Last: {last} ID: {id} is not authorized!".format(
+                          username=msg["from"].get("username", ""), first=msg["from"].get("first_name", ""),
+                          last=msg["from"].get("last_name", ""), id=msg["from"].get("id", "")))
+            self.sender.sendMessage("Not authorized!")
+            self.close()
             return
         else:
             logging.info("User is authorized")
