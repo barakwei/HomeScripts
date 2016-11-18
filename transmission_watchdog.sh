@@ -8,5 +8,5 @@ else
   SCRIPT_DIR="$(dirname "$0")"
   echo "$(date): Transmission not responding, restarting daemon"
   /usr/sbin/service transmission-daemon restart
-  "$SCRIPT_DIR"/notify.sh "Transmission Watchdog" "Restated the daemon"
+  "$SCRIPT_DIR"/notify.sh "Transmission Watchdog" "Restarted the daemon"
 fi
