@@ -266,11 +266,9 @@ class HomeBot(telepot.helper.ChatHandler):
         self.command_handler = TorrentCommandHandler(self, text)
 
     def _on_flexget_command(self, text):
-        self.sender.sendMessage(text)
-        self.sender.sendChatAction('upload_document')
-        temp_file_path = text_to_tempfile(text)
-        self.sender.sendDocument(open(temp_file_path, 'rb'))
-        os.remove(temp_file_path)
+        flexget_log_file = "/home/pi/.flexget/flexget.log"
+        self.sender.sendDocument(open(flexget_log_file, 'rb'))
+        self.close()
 
     def _on_unknown_command(self, text):
         self.sender.sendMessage("Unknown command: " + text)
@@ -304,7 +302,7 @@ class HomeBot(telepot.helper.ChatHandler):
             return
 
         message = msg['text'].strip()
-        logging.error("Message arrived: " + message)
+        logging.info("Message arrived: " + message)
         if message == "/cancel":
             self.close()
 
