@@ -8,10 +8,37 @@ from telepot.delegate import per_chat_id, create_open, pave_event_space
 import transmissionrpc
 import math
 import json
+from datetime import datetime
 
 
 rootLogger = logging.getLogger('')
 rootLogger.setLevel(logging.INFO)
+
+
+def human_readable_timedelta(timedelta, precision=2):
+    units = ('year', 'day', 'hour', 'minute', 'second', 'microsecond')
+
+    delta = abs(timedelta)
+    delta_dict =  {
+        'year': int(delta.days / 365),
+        'day': int(delta.days % 365),
+        'hour': int(delta.seconds / 3600),
+        'minute': int(delta.seconds / 60) % 60,
+        'second': delta.seconds % 60,
+    }
+
+    hlist = []
+    count = 0
+
+    for unit in units:
+        if count >= precision: break # met precision
+        unit_value = delta_dict[unit]
+        if unit_value== 0: continue # skip 0's
+        s = '' if unit_value == 1 else 's' # handle plurals
+        hlist.append('{} {}{}'.format(delta_dict[unit], unit, s))
+        count += 1
+
+    return format(', '.join(hlist)) + " ago"
 
 
 def human_readable_file_size(size):
@@ -22,6 +49,58 @@ def human_readable_file_size(size):
     p = math.pow(1024, i)
     s = round(size / p, 2)
     return '%s %s' % (s, size_name[i])
+
+
+class Flexget:
+    def _run_flexget_command(self, flexget_command):
+        return_code, result = run_shell_command("flexget " + flexget_command)
+        if result and result.startswith("There is a FlexGet process already running"):
+            result = '\n'.join(result.splitlines()[1:])
+        return return_code, result
+
+    def list(self):
+        return_code, result = self._run_flexget_command("status --porcelain")
+        if return_code!=0:
+            return result
+
+        statuses = self._parse_flexget_status(result)
+        format_tasks = [self._status_to_markdown(s) for s in statuses]
+        return format_tasks
+
+    def _parse_flexget_status(self, status_result):
+        lines = status_result.splitlines()
+        headers = lines[0].split("|")
+        headers = [item.strip() for item in headers]
+        status_lines = lines[1:]
+        tasks_data = []
+        for line in status_lines:
+            task_data = {}
+            for index, field_data in enumerate(line.split("|")):
+                task_data[headers[index]] = field_data.strip()
+            tasks_data.append(task_data)
+        return tasks_data
+
+    def _status_to_markdown(self, status_data):
+        task_name = status_data["Task"]
+        last_exec = status_data["Last execution"]
+        last_success = status_data["Last success"]
+
+        if last_exec != "-":
+            last_exec_date = datetime.strptime(last_exec, "%Y-%m-%d %H:%M")
+            last_exec_desc = human_readable_timedelta(datetime.now() - last_exec_date)
+        else:
+            last_exec_desc = "Never"
+
+        if last_success != "-":
+            last_success_date = datetime.strptime(last_success, "%Y-%m-%d %H:%M")
+            last_success_desc = human_readable_timedelta(datetime.now() - last_success_date)
+        else:
+            last_success_desc = "Never"
+
+        return "*{task_name}*\nLast run: {last_exec_desc}\nLast success: {last_success_desc}".format(**locals())
+
+    def execute(self, task_name):
+        return task_name
 
 
 class Transmission:
@@ -122,7 +201,7 @@ def run_shell_command(command):
     except CalledProcessError as e:
         output = e.output
         return_code = e.returncode
-    return return_code, output
+    return return_code, str(output, 'utf-8')
 
 
 def run_shell_command_and_reply_answer(command, sender):
@@ -154,6 +233,62 @@ class CommandHandler:
 
     def send_command_help_message(self):
         pass
+
+
+class FlexgetListCommandHandler:
+    def __init__(self, bot, text):
+        for message in Flexget().list():
+            bot.sender.sendMessage(message, parse_mode='Markdown')
+
+        self.text = text
+        bot.close()
+
+
+class FlexgetExecuteCommandHandler(CommandHandler):
+    def __init__(self, bot, text):
+        super(FlexgetExecuteCommandHandler, self).__init__(bot, text)
+
+    def handle_command(self, text):
+        if not text:
+            self.send_command_help_message()
+            return
+        self.bot.sender.sendMessage(Transmission.execute(text))
+        self.bot.close()
+
+    def send_command_help_message(self):
+        self.bot.sender.sendMessage("Please provide a task name or /cancel")
+
+
+class FlexgetCommandHandler:
+    def __init__(self, bot, text):
+        self.bot = bot
+        self.send_command_help_message()
+        self.text = text
+        self.command_handler = None
+
+    def send_command_help_message(self):
+        self.bot.sender.sendMessage("Flexget help - /list /execute")
+
+    def handle_command(self, text):
+        if self.command_handler:
+            self.command_handler.handle_command(text)
+            return
+
+        if len(text) == 0:
+            self.send_command_help_message()
+            return
+
+        split_text = text.split()
+        command = split_text[0][1:].lower()
+        command_args = " ".join(split_text[1:])
+        logging.info("received flexget command " + command)
+
+        if command == "list":
+            self.command_handler = FlexgetListCommandHandler(self.bot, command_args)
+        elif command == "execute":
+            self.command_handler = FlexgetExecuteCommandHandler(self.bot, command_args)
+        else:
+            self.send_command_help_message()
 
 
 class TorrentAddCommandHandler(CommandHandler):
@@ -266,9 +401,7 @@ class HomeBot(telepot.helper.ChatHandler):
         self.command_handler = TorrentCommandHandler(self, text)
 
     def _on_flexget_command(self, text):
-        flexget_log_file = "/home/pi/.flexget/flexget.log"
-        self.sender.sendDocument(open(flexget_log_file, 'rb'))
-        self.close()
+        self.command_handler = FlexgetCommandHandler(self, text)
 
     def _on_unknown_command(self, text):
         self.sender.sendMessage("Unknown command: " + text)
