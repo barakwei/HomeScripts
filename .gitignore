@@ -1,8 +1,1 @@
-# Notification configuration file
-notify.cfg
-
-# thingspeak configuration file
-thingspeak.json
-
-# bot configuration file
-bot.json
+variables.cfg

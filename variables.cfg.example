@@ -1,0 +1,10 @@
+send_telegram=YES
+send_pushbullet=NO
+pushbullet_token=asodjfklasdlfasdlrrfkjaklsffdkfa:
+telegram_chat_id=524352345
+telegram_token=54245254:Ajd7JrnVhd8HaebhHSOO4NjaeUcLakq72bC
+telegram_authorized_user=barakwei
+crashplan_user=blah@whatever.com
+crashplan_password=abcdefsdf
+thingspeak_writekey=54254LKJNVKD
+thingspeak_speedtest_channel=10494
