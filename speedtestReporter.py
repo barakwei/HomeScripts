@@ -7,6 +7,8 @@ import thingspeak
 import traceback
 import json
 import os
+from variables import Variables
+
 
 rootLogger = logging.getLogger('')
 rootLogger.setLevel(logging.INFO)
@@ -28,16 +30,10 @@ def main():
     global channel
 
     try:
-        config_file_path = join_path_to_script_directory('thingspeak.json')
-        
-        with open(config_file_path) as config_file:
-            config = json.load(config_file)
+        variables = Variables()
 
-        channel_id = config["channel"]
-        write_key = config["writekey"]
-
-        #for server in speedtest.list_servers():
-        #    print('%(id)4s) %(sponsor)s (%(name)s, %(country)s) ''[%(d)0.2f km]' % server)
+        channel_id = variables["thingspeak_speedtest_channel"]
+        write_key = variables["thingspeak_writekey"]
 
         ping, download, upload, server = speedtest.test_speed(timeout=30, secure=True)
         download = download /(1000.0*1000.0)*8
