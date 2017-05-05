@@ -9,6 +9,7 @@ import transmissionrpc
 import math
 import json
 from datetime import datetime
+from variables import Variables
 
 
 rootLogger = logging.getLogger('')
@@ -405,6 +406,7 @@ class HomeBot(telepot.helper.ChatHandler):
 
     def _on_unknown_command(self, text):
         self.sender.sendMessage("Unknown command: " + text)
+        self.close()
 
     def handle_command(self, text):
         split_text = text.split()
@@ -449,13 +451,7 @@ class HomeBot(telepot.helper.ChatHandler):
 def main():
     configure_log()
 
-    config_file_path = join_path_to_script_directory('bot.json')
-
-    with open(config_file_path) as config_file:
-        config = json.load(config_file)
-
-    bot_token = config["telegram_bot_token"]
-    authorized_user = config["telegram_authorized_user"]
+    bot_token = Variables()["telegram_token"]
 
     bot = telepot.DelegatorBot(bot_token, [
         pave_event_space()(
