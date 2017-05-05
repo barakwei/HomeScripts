@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. "$(dirname "$0")"/notify.cfg
+. "$(dirname "$0")"/variables.cfg
 
 if [ "$send_telegram" = "YES" ] ; then
   curl -s -o /dev/null --data chat_id=$telegram_chat_id --data parse_mode="Markdown" --data-urlencode "text=*$1*: $2" "https://api.telegram.org/bot$telegram_token/sendMessage"
