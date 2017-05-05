@@ -9,6 +9,7 @@ import transmissionrpc
 import math
 import json
 from datetime import datetime
+from crashplan import Crashplan
 from variables import Variables
 
 
@@ -236,6 +237,40 @@ class CommandHandler:
         pass
 
 
+class CrashplanCommandHandler:
+    def __init__(self, bot, text):
+        self.bot = bot
+        self.text = text
+
+        variables = Variables()
+
+        crashplan = Crashplan(variables["crashplan_user"], variables["crashplan_password"])
+        subscription = crashplan.get_subscription()
+
+        computers = crashplan.computers()
+        self.bot.sender.sendMessage(self._subscription_to_markdown(subscription), parse_mode='Markdown')
+        for computer in computers:
+            self.bot.sender.sendMessage(self._computer_to_markdown(computer), parse_mode='Markdown')
+
+        bot.close()
+
+    def _computer_to_markdown(self, computer):
+        name = computer.name
+        last_connected = computer.last_connected.humanize()
+        total_backup_size = human_readable_file_size(computer.total_backup_size)
+        percentComplete = computer.percentComplete
+        last_completed = computer.last_completed.humanize()
+
+        return ("*{name}* Done: {percentComplete}% | Last completed: {last_completed} | "
+                "Last connected: {last_connected} | Backup size: {total_backup_size}").format(**locals())
+
+    def _subscription_to_markdown(self, subscription):
+        name  = subscription.name
+        expiration = subscription.expirationDate.humanize()
+        return "*{name}* Expires {expiration}".format(**locals())
+
+
+
 class FlexgetListCommandHandler:
     def __init__(self, bot, text):
         for message in Flexget().list():
@@ -404,6 +439,9 @@ class HomeBot(telepot.helper.ChatHandler):
     def _on_flexget_command(self, text):
         self.command_handler = FlexgetCommandHandler(self, text)
 
+    def _on_crashplan_command(self, text):
+        self.command_handler = CrashplanCommandHandler(self, text)
+
     def _on_unknown_command(self, text):
         self.sender.sendMessage("Unknown command: " + text)
         self.close()
@@ -416,6 +454,8 @@ class HomeBot(telepot.helper.ChatHandler):
             self._on_torrent_command(command_args)
         elif command == "flexget":
             self._on_flexget_command(command_args)
+        elif command == "crashplan":
+            self._on_crashplan_command(command_args)
         else:
             self._on_unknown_command(text)
 
