@@ -55,7 +55,8 @@ def human_readable_file_size(size):
 
 class Flexget:
     def _run_flexget_command(self, flexget_command):
-        return_code, result = run_shell_command("flexget " + flexget_command)
+        flexget_path = Variables()["flexget_path"]
+        return_code, result = run_shell_command(flexget_path +  " " + flexget_command)
         if result and result.startswith("There is a FlexGet process already running"):
             result = '\n'.join(result.splitlines()[1:])
         return return_code, result
