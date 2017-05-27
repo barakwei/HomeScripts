@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 from crashplan import Crashplan
 from variables import Variables
+import psutil
 
 
 rootLogger = logging.getLogger('')
@@ -273,6 +274,57 @@ class CrashplanCommandHandler:
         return "*{name}* Expires {expiration}".format(**locals())
 
 
+class SystemRebootCommandHandler:
+    def __init__(self, bot, text):
+        run_shell_command_and_reply_answer("reboot", bot.sender)
+        bot.close()
+
+
+class SystemDiskCommandHandler(CommandHandler):
+    def __init__(self, bot, text):
+        for partition in psutil.disk_partitions():
+            usage = psutil.disk_usage(partition.mountpoint)
+            bot.sender.sendMessage(self._disk_usage_to_markdown(partition.mountpoint, usage), parse_mode='Markdown')
+        bot.close()
+
+    def _disk_usage_to_markdown(self, mount_point, disk_usage):
+        return '\[{mount_point}] *Total*: {total_size} *Free*: {free} ({free_percentage}%)'\
+            .format(mount_point=mount_point, total_size=human_readable_file_size(disk_usage.total),
+                    free=human_readable_file_size(disk_usage.free),
+                    free_percentage=round((100 - disk_usage.percent), 2))
+
+
+class SystemCommandHandler:
+    def __init__(self, bot, text):
+        self.bot = bot
+        self.send_command_help_message()
+        self.text = text
+        self.command_handler = None
+
+    def send_command_help_message(self):
+        self.bot.sender.sendMessage("System help - /disk /reboot")
+
+    def handle_command(self, text):
+        if self.command_handler:
+            self.command_handler.handle_command(text)
+            return
+
+        if len(text) == 0:
+            self.send_command_help_message()
+            return
+
+        split_text = text.split()
+        command = split_text[0][1:].lower()
+        command_args = " ".join(split_text[1:])
+        logging.info("received system command " + command)
+
+        if command == "disk":
+            self.command_handler = SystemDiskCommandHandler(self.bot, command_args)
+        elif command == "reboot":
+            self.command_handler = SystemRebootCommandHandler(self.bot, command_args)
+        else:
+            self.send_command_help_message()
+
 
 class FlexgetListCommandHandler:
     def __init__(self, bot, text):
@@ -445,6 +497,9 @@ class HomeBot(telepot.helper.ChatHandler):
     def _on_crashplan_command(self, text):
         self.command_handler = CrashplanCommandHandler(self, text)
 
+    def _on_system_command(self, text):
+        self.command_handler = SystemCommandHandler(self, text)
+
     def _on_unknown_command(self, text):
         self.sender.sendMessage("Unknown command: " + text)
         self.close()
@@ -459,6 +514,8 @@ class HomeBot(telepot.helper.ChatHandler):
             self._on_flexget_command(command_args)
         elif command == "crashplan":
             self._on_crashplan_command(command_args)
+        elif command == "system":
+            self._on_system_command(command_args)
         else:
             self._on_unknown_command(text)
 
