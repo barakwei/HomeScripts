@@ -21,7 +21,7 @@ def human_readable_timedelta(timedelta, precision=2):
     units = ('year', 'day', 'hour', 'minute', 'second', 'microsecond')
 
     delta = abs(timedelta)
-    delta_dict =  {
+    delta_dict = {
         'year': int(delta.days / 365),
         'day': int(delta.days % 365),
         'hour': int(delta.seconds / 3600),
@@ -33,9 +33,11 @@ def human_readable_timedelta(timedelta, precision=2):
     count = 0
 
     for unit in units:
-        if count >= precision: break # met precision
+        if count >= precision:
+            break # met precision
         unit_value = delta_dict[unit]
-        if unit_value== 0: continue # skip 0's
+        if unit_value == 0:
+            continue # skip 0's
         s = '' if unit_value == 1 else 's' # handle plurals
         hlist.append('{} {}{}'.format(delta_dict[unit], unit, s))
         count += 1
@@ -63,7 +65,7 @@ class Flexget:
 
     def list(self):
         return_code, result = self._run_flexget_command("status --porcelain")
-        if return_code!=0:
+        if return_code != 0:
             return result
 
         statuses = self._parse_flexget_status(result)
@@ -266,7 +268,7 @@ class CrashplanCommandHandler:
                 "Last connected: {last_connected} | Backup size: {total_backup_size}").format(**locals())
 
     def _subscription_to_markdown(self, subscription):
-        name  = subscription.name
+        name = subscription.name
         expiration = subscription.expirationDate.humanize()
         return "*{name}* Expires {expiration}".format(**locals())
 
