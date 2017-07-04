@@ -276,7 +276,7 @@ class CrashplanCommandHandler:
 
 class SystemRebootCommandHandler:
     def __init__(self, bot, text):
-        run_shell_command_and_reply_answer("reboot", bot.sender)
+        run_shell_command_and_reply_answer("/sbin/reboot", bot.sender)
         bot.close()
 
 
