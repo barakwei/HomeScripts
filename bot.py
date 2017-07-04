@@ -12,7 +12,7 @@ from datetime import datetime
 from crashplan import Crashplan
 from variables import Variables
 import psutil
-
+import re
 
 rootLogger = logging.getLogger('')
 rootLogger.setLevel(logging.INFO)
@@ -282,7 +282,9 @@ class SystemRebootCommandHandler:
 
 class SystemDiskCommandHandler(CommandHandler):
     def __init__(self, bot, text):
-        for partition in psutil.disk_partitions():
+        for partition in psutil.disk_partitions(True):
+            if not re.fullmatch(Variables()["mountpoint_regex"], partition.mountpoint):
+                continue
             usage = psutil.disk_usage(partition.mountpoint)
             bot.sender.sendMessage(self._disk_usage_to_markdown(partition.mountpoint, usage), parse_mode='Markdown')
         bot.close()
